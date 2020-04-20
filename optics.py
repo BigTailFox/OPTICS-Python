@@ -8,12 +8,13 @@ import pandas as pd
 
 
 class OPTICS(object):
+
     def __init__(self, dataframe: pd.DataFrame):
         self.data = dataframe
         self.len = len(dataframe)
         self.ordered_queue: list = []
         self.result_queue: list = []
-        self.category_queue = np.zeros(self.len, dtype=int)
+        self.cluster_labels = np.zeros(self.len, dtype=int)
         self.visited = np.zeros(self.len, dtype=int)
         self.adjacency_matrix = np.full((self.len, self.len), -1, dtype=float)
         # the index that can sort adjacency_matrix by rows.
@@ -44,7 +45,7 @@ class OPTICS(object):
     def clear(self):
         self.ordered_queue = []
         self.result_queue = []
-        self.category_queue = np.zeros(self.len, dtype=int)
+        self.cluster_labels = np.zeros(self.len, dtype=int)
         self.visited = np.zeros(self.len, dtype=int)
         self.adjacency_matrix = np.full((self.len, self.len), -1, dtype=float)
         # the index that can sort adjacency_matrix by rows.
@@ -82,7 +83,7 @@ class OPTICS(object):
             rd = max(self.core_distances[cp], self.adjacency_matrix[cp, index])
             # if point not in ordered queue, insert it and re-order.
             if index not in self.ordered_queue:
-                self.reachable_distances[index] = index
+                self.reachable_distances[index] = rd
                 self.ordered_queue.append(index)
                 self.ordered_queue.sort(
                     key=lambda x: self.reachable_distances[x])
@@ -131,13 +132,13 @@ class OPTICS(object):
                 if self.core_distances[p] != 0 and self.core_distances[p] < Eps:
                     ID = k
                     k += 1
-                    self.category_queue[i] = ID
+                    self.cluster_labels[p] = ID
                 # it's a noise point.
                 else:
-                    self.category_queue[i] = -1
+                    self.cluster_labels[p] = -1
             # if its rd is -2, its a noise point.
             elif self.reachable_distances[p] == -2:
-                self.category_queue[i] = -1
+                self.cluster_labels[p] = -1
                 # if its rd is within given Eps, it belongs to the same cluster.
             else:
-                self.category_queue[i] = ID
+                self.cluster_labels[p] = ID
