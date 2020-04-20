@@ -55,7 +55,7 @@ class OPTICS(object):
 
     @staticmethod
     def distance(p1: pd.Series, p2: pd.Series):
-        return sum((p1 - p2) ** 2)
+        return (sum((p1 - p2) ** 2)) ** 0.5
 
     def __find_core_point(self, Eps, MinPts):
         for i in range(self.len):
@@ -97,22 +97,12 @@ class OPTICS(object):
     def optics(self, Eps, MinPts):
         self.__initialize(Eps, MinPts)
         for i in range(self.len):
-            # from data set choose an unvisited point, add to result queue.
-            if self.visited[i] == 0:
+            # from data set choose an unvisited core point, add to result queue.
+            if self.visited[i] == 0 and self.core_points[i] != 0:
                 self.visited[i] = 1
                 self.result_queue.append(i)
-                # calculate the min rd of start point.
-                rdmin = float('inf')
-                for j in range(1, self.len):
-                    d = self.adjacency_matrix[i, self.sort_matrix[i, j]]
-                    rd = max(self.core_distances[self.sort_matrix[i, j]], d)
-                    if rd < rdmin:
-                        rdmin = rd
-                self.reachable_distances[i] = rd
-                # if the chosen point is core point,
                 # insert all unvisited neighbor points of the core point to ordered queue.
-                if self.core_points[i] != 0:
-                    self.__insert_ordered_queue(i)
+                self.__insert_ordered_queue(i)
                 while self.ordered_queue:
                     # pop first point in ordered queue and add it to result queue.
                     nearest = self.ordered_queue.pop(0)
@@ -122,6 +112,11 @@ class OPTICS(object):
                     # insert all its unvisited neighbor points to ordered queue.
                     if self.core_points[nearest] != 0:
                         self.__insert_ordered_queue(nearest)
+        # push all left unvisited points(noise points) to result queue.
+        for i in range(self.len):
+            if self.visited[i] == 0:
+                self.result_queue.append(i)
+                self.reachable_distances[i] == -2
 
     def cluster_extract(self, Eps):
         ID = -1
@@ -136,10 +131,13 @@ class OPTICS(object):
                 if self.core_distances[p] != 0 and self.core_distances[p] < Eps:
                     ID = k
                     k += 1
-                    self.category_queue[p] = ID
+                    self.category_queue[i] = ID
                 # it's a noise point.
                 else:
-                    self.category_queue[p] = -1
-            # if its rd is within given Eps, it belongs to the same cluster.
+                    self.category_queue[i] = -1
+            # if its rd is -2, its a noise point.
+            elif self.reachable_distances[p] == -2:
+                self.category_queue[i] = -1
+                # if its rd is within given Eps, it belongs to the same cluster.
             else:
-                self.category_queue[p] = ID
+                self.category_queue[i] = ID
