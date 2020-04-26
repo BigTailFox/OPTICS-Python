@@ -13,19 +13,19 @@ COLORS = ['plum', 'palevioletred', 'sandybrown', 'lightcoral', 'crimson',
           'cornflowerblue', 'seagreen', 'lightsalmon', 'burlywood', 'forestgreen']
 
 if __name__ == "__main__":
-    df = pd.read_table("cluster_data_set/Aggregation.txt",
+    df = pd.read_table("cluster_data_set/spiral.txt",
                        delim_whitespace=True)
     print(df.describe())
     fig0 = plt.figure("ground truth")
     for i in range(len(df)):
         plt.scatter(df.iloc[i, 0], df.iloc[i, 1],
-                    color=COLORS[df.iloc[i, 2] % len(COLORS)])
+                    color=COLORS[df.iloc[i, -1] % len(COLORS)])
 
     # remove label for clustering task.
-    df1 = df.iloc[:, :2]
+    df1 = df.iloc[:, :-1]
     # run optics cluster.
     model = OPTICS(df1)
-    model.optics(Eps=10000, MinPts=8)
+    model.optics(Eps=10000, MinPts=2)
     # show ordered reachable distance and core distance.
     fig1 = plt.figure("ordered rd with ground truth label")
     index = np.linspace(0, model.len, model.len)
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         rd.append(model.reachable_distances[model.result_queue[i]])
         cd.append(model.core_distances[model.result_queue[i]])
         labels.append(
-            COLORS[df.iloc[model.result_queue[i], 2] % len(COLORS)])
+            COLORS[df.iloc[model.result_queue[i], -1] % len(COLORS)])
     plt.bar(index, rd, color=labels)
     plt.plot(index, rd, color='black', linewidth=0.3)
     plt.ylim(0, 5)
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     plt.ylim(0, 5)
 
     # extract cluster result and visualize
-    model.cluster_extract(1.6)
+    model.cluster_extract(1.5)
     fig3 = plt.figure("clustering result")
     cluster_labels = []
     for i in range(model.len):
